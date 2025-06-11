@@ -244,13 +244,13 @@ task DecompressRunTarball {
 
         # Lets hope this works and successfully merges either bams or fastqs.
         while read -r DIR_PATH; do
-            BARCODE=$(basename "$DIR_PATH")
+            BARCODE="$(basename "$DIR_PATH")"
             # if we have bams, merge the bams.
             if [[ -n $(find "$DIR_PATH" -name "*.bam" -print -quit) ]]; then
                 echo "BAM input detected. Merging using samtools"
                 BAM_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
-                echo "${BARCODE} $(cat ${BAM_LIST} | wc -l)" >> file_counts.txt
+                echo "${BARCODE}" "$(cat ${BAM_LIST} | wc -l)" >> file_counts.txt
                 samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
 
@@ -258,8 +258,8 @@ task DecompressRunTarball {
                 echo "Fastq input detected. Merging using SeqKit"
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
-                echo "${BARCODE} $(cat ${FQ_LIST} | wc -l)" >> file_counts.txt
-                zcat $(cat "$FQ_LIST") | gzip > "merged/${BARCODE}.merged.fastq.gz"
+                echo "${BARCODE}" "$(cat ${FQ_LIST} | wc -l)" >> file_counts.txt
+                zcat "$(cat "$FQ_LIST")" | gzip > "merged/${BARCODE}.merged.fastq.gz"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
