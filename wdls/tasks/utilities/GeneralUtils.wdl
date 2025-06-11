@@ -211,10 +211,10 @@ task DecompressRunTarball {
         fi
         # todo: figure out a faster way to validate tarball integrity..should probably just do the md5sum checking here?
         # handy snippet from community post: 360073540652-Cromwell-execution-directory
-        gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
+        #gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
 
-        echo "$gcs_task_call_basepath"
-        true > gcs_merged_bam_paths.txt
+        #echo "$gcs_task_call_basepath"
+        #true > gcs_merged_bam_paths.txt
 
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
         tar -xzf ~{tarball} -C extracted --strip-components=1
@@ -269,7 +269,7 @@ task DecompressRunTarball {
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${BAM_LIST}" | wc -l)" >> file_counts.txt
                 samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
-                echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
+                #echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
 
             elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
                 echo "Fastq input detected. Merging reads"
@@ -277,7 +277,7 @@ task DecompressRunTarball {
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${FQ_LIST}" | wc -l)" >> file_counts.txt
                 xargs zcat <"$FQ_LIST" | gzip > "merged/${BARCODE}.merged.fastq.gz"
-                echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
+                #echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
             fi
@@ -294,7 +294,7 @@ task DecompressRunTarball {
 
         # output an array of our merged bam_files or fastqs
         Array[File] merged_reads = select_first([glob("merged/*.bam"), glob("merged/*.fastq")])
-        File glob_paths = "gcs_merged_reads_paths.txt"
+        #File glob_paths = "gcs_merged_reads_paths.txt"
     }
 
     #########################
