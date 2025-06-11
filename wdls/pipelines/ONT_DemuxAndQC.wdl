@@ -55,13 +55,15 @@ workflow ONT_DemuxAndQC {
     # begone validation checks. If it's invalid just check after the execution fails...
     call NP.NanoPlotFromSummary { input: summary_files = summary_files, is_valid = summary_is_valid }
 
-    # Validate tarball's integrity but power through regardless since cromwell hates me and won't do a simple boolean conditional...
-    call GenUtils.ValidateMd5sum as run_bams_validation { input: file = RunTarball, checksum = RunChecksum }
-
     # input this to the decompression step so that we can stage this and prevent issues with cromwell trying to move the same file at the same time.
     # Since I think that may be an issue. (I have no proof just a hunch)
-    Boolean run_is_valid = read_boolean(run_bams_validation.is_valid)
-    call GenUtils.DecompressRunTarball { input: tarball = RunTarball, is_valid = run_is_valid, raw_hash_file = raw_hash_file, raw_hash_digest = raw_hash_digest }
+    call GenUtils.DecompressRunTarball {
+        input:
+            tarball = RunTarball,
+            tarball_hash = RunChecksum,
+            raw_hash_file = raw_hash_file,
+            raw_hash_digest = raw_hash_digest
+    }
 
     # and now we parse our samplesheet using the paths from above!
     # this will either fail or work perfectly.
@@ -78,8 +80,9 @@ workflow ONT_DemuxAndQC {
         File samplesheet_with_reads_json = ParseSamplesheetToDataTable.samplesheet_with_reads_json
 
         # Validation output
-        File run_validation_file = run_bams_validation.is_valid
-        Boolean run_validation_status = run_is_valid
+        Array[Pair[String, Boolean]] summary_file_integrity = summary_integrity
+        File run_validation_status = DecompressRunTarball.is_valid
+        File corrupted_files = DecompressRunTarball.corrupted_files
 
         # decompressed outputs from DecompressRunTarball if md5 is valid.
         Int directory_count = DecompressRunTarball.directory_count
@@ -87,8 +90,6 @@ workflow ONT_DemuxAndQC {
         Array[String] barcode = DecompressRunTarball.barcode
         Array[File] merged_reads = DecompressRunTarball.merged_reads
         File merged_reads_gcp_paths = DecompressRunTarball.glob_paths
-
-        Array[Pair[String, Boolean]] summary_file_integrity = summary_integrity
 
         # NanoPlot outputs
         File nanoplot_map = NanoPlotFromSummary.map

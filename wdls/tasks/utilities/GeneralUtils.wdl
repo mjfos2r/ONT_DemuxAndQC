@@ -181,7 +181,7 @@ task DecompressRunTarball {
 
     input {
         File tarball
-        Boolean is_valid
+        File tarball_hash
         File? raw_hash_file
         File? raw_hash_digest
 
@@ -198,23 +198,36 @@ task DecompressRunTarball {
 
         NPROC=$(awk '/^processor/{print}' /proc/cpuinfo | wc -l)
 
-        mkdir -p extracted
-        mkdir -p merged
+        #idk what was required but it's gone now.
+        EXPECTED_MD5=$(cat "~{tarball_hash}" | awk '{print $1}')
+        md5sum "~{tarball}" > actual_sum.txt
+        ACTUAL_MD5=$(cat actual_sum.txt | awk '{print $1}')
+        if [ "$EXPECTED_MD5" != "$ACTUAL_MD5" ]; then
+            echo "ERROR: CHECKSUM VALIDATION FAILED FOR ~{tarball}"
+            echo "ERROR: Expected: $EXPECTED_MD5"
+            echo "ERROR:   Actual: $ACTUAL_MD5"
+            VALID=false
+            echo "false" > valid.txt
+        else
+            echo "###################################################"
+            echo "SUCCESS: Checksum validation successful for ~{tarball}"
+            echo "###################################################"
+            VALID=true
+            echo "true" > valid.txt
+        fi
 
-        echo "#####################################"
-        echo "# RUN TARBALL IS VALID: ~{is_valid} #"
-        echo "#####################################"
-
-        if ! ~{is_valid}; then
+        if ! "$VALID"; then
             echo "ERROR: NOT ATTEMPTING DECOMPRESSION SINCE TARBALL IS CORRUPTED!"
             exit 1
         fi
+
         # todo: figure out a faster way to validate tarball integrity..should probably just do the md5sum checking here?
         # handy snippet from community post: 360073540652-Cromwell-execution-directory
-        #gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
+        gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
+        echo "$gcs_task_call_basepath"
+        true > gcs_merged_bam_paths.txt
 
-        #echo "$gcs_task_call_basepath"
-        #true > gcs_merged_bam_paths.txt
+
         echo "Decompressing tarball."
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
         tar -xzf ~{tarball} -C extracted --strip-components=1
@@ -231,7 +244,7 @@ task DecompressRunTarball {
             #echo -e "\nCurrent location of files.md5:        $(realpath ~{raw_hash_file})\n"
             #echo -e "\nCurrent location of files.md5.digest: $(realpath ~{raw_hash_digest})\n"
             # you know what, actually we need to just pull the digest from hashes.
-            echo "Pulling hash digest from each hashfile!"
+            echo "Checking digests. Reading expected from file and calculating locally."
             RAW_MD5_DIGEST_EXPECTED=$(cat "~{raw_hash_digest}" | awk '{print $1}')
             RAW_MD5_DIGEST_CALC=$(md5sum "~{raw_hash_file}" | awk '{print $1}')
             if [ "$RAW_MD5_DIGEST_EXPECTED" == "$RAW_MD5_DIGEST_CALC" ]; then
@@ -240,14 +253,19 @@ task DecompressRunTarball {
                 echo "ERROR: Raw hash is invalid!"
                 exit 1
             fi
-
+            TMPFILE=$(mktemp)
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd extracted
-            md5sum -c "~{raw_hash_file}" || { echo "ERROR: Extracted reads validation failed!"; exit 1; }
-            echo "SUCCESS: RAW FILES CHECK, all reads are good!"
+            if md5sum -c "~{raw_hash_file}" 2>&1 | tee "$TMPFILE" | grep "FAILED"; then
+                echo "ERROR: Extracted reads validation failed!"
+                grep "FAILED" "$TMPFILE" > ../corrupted_files.txt
+            else
+                echo "SUCCESS: RAW FILES CHECK, all reads are good!"
+                echo "NONE" > ../corrupted_files.txt
+            fi
             cd -
         else
-            echo "no raw_hash/raw_digest provided, skipping individual file integrity checks!"
+            echo "no raw_hash_file/raw_hash_digest provided, skipping individual file integrity checks!"
         fi
 
         # Get a list of our directories, pull the barcode ID, all so we can make a list of files for each
@@ -270,7 +288,7 @@ task DecompressRunTarball {
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${BAM_LIST}" | wc -l)" >> file_counts.txt
                 samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
-                #echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
+                echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
 
             elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
                 echo "Fastq input detected. Merging reads"
@@ -278,7 +296,7 @@ task DecompressRunTarball {
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${FQ_LIST}" | wc -l)" >> file_counts.txt
                 xargs zcat <"$FQ_LIST" | gzip > "merged/${BARCODE}.merged.fastq.gz"
-                #echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
+                echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
             fi
@@ -292,10 +310,11 @@ task DecompressRunTarball {
         Array[Int] file_counts = read_lines("file_counts.txt")
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
-
         # output an array of our merged bam_files or fastqs
         Array[File] merged_reads = select_first([glob("merged/*.bam"), glob("merged/*.fastq")])
-        #File glob_paths = "gcs_merged_reads_paths.txt"
+        File glob_paths = "gcs_merged_reads_paths.txt"
+        File is_valid = "valid.txt"
+        File corrupted_files = "corrupted_files.txt"
     }
 
     #########################
