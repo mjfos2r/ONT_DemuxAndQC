@@ -225,7 +225,7 @@ task DecompressRunTarball {
         # handy snippet from community post: 360073540652-Cromwell-execution-directory
         gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
         echo "$gcs_task_call_basepath"
-        true > gcs_merged_bam_paths.txt
+        true > gcs_merged_reads_paths.txt
 
 
         echo "Decompressing tarball."
