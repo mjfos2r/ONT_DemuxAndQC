@@ -259,7 +259,7 @@ task DecompressRunTarball {
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE} $(cat ${FQ_LIST} | wc -l)" >> file_counts.txt
-                cat "$DIR_PATH"/*.fastq.gz > merged/"${BARCODE}.merged.fastq"
+                seqkit concat -f "$FQ_LIST" -o "merged/${BARCODE}.merged.fastq.gz"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
@@ -290,7 +290,7 @@ task DecompressRunTarball {
         boot_disk_gb:       50,
         preemptible_tries:  0,
         max_retries:        1,
-        docker:             "mjfos2r/samtools:latest"
+        docker:             "mjfos2r/align-tools:latest"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
