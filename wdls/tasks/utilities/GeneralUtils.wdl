@@ -215,9 +215,10 @@ task DecompressRunTarball {
 
         #echo "$gcs_task_call_basepath"
         #true > gcs_merged_bam_paths.txt
-
+        echo "Decompressing tarball."
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
         tar -xzf ~{tarball} -C extracted --strip-components=1
+        echo "Decompression finished!"
 
         # if we've provided the hash and digest, validate em.
         if [[ -f "~{raw_hash_digest}" && -f "~{raw_hash_file}" ]]; then
