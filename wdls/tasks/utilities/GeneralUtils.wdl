@@ -217,7 +217,7 @@ task DecompressRunTarball {
         true > gcs_merged_bam_paths.txt
 
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
-        tar --use-compress-program=pigz -xf ~{tarball} -C extracted --strip-components=1
+        tar -xzf ~{tarball} -C extracted --strip-components=1
 
         # if we've provided the hash and digest, validate em.
         if [[ -f "~{raw_digest}" && -f "~{raw_hash}" ]]; then
@@ -246,7 +246,7 @@ task DecompressRunTarball {
         while read -r DIR_PATH; do
             BARCODE=$(basename "$DIR_PATH")
             # if we have bams, merge the bams.
-            if find "$DIR_PATH" -name "*.bam" | grep -q .; then
+            if [[ -n $(find "$DIR_PATH" -name "*.bam" -print -quit) ]]; then
                 echo "BAM input detected. Merging using samtools"
                 BAM_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
@@ -254,12 +254,12 @@ task DecompressRunTarball {
                 samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
 
-            elif find "$DIR_PATH" -name "*.fastq.gz" | grep -q .; then
+            elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
                 echo "Fastq input detected. Merging using SeqKit"
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE} $(cat ${FQ_LIST} | wc -l)" >> file_counts.txt
-                seqkit concat -f "$FQ_LIST" -o "merged/${BARCODE}.merged.fastq.gz"
+                zcat $(cat "$FQ_LIST") | gzip > "merged/${BARCODE}.merged.fastq.gz"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
