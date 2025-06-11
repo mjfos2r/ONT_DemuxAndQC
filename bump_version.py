@@ -14,6 +14,8 @@ def bump(version, level):
         case 'major':
             major += 1
             minor = patch = 0
+        case 'init':
+            major = minor = patch = 0
     return f"{major}.{minor}.{patch}"
 
 def get_version(file) -> str:
@@ -38,10 +40,6 @@ def main():
     main_version_file = Path('.VERSION')
     pyproject_toml = Path('pyproject.toml')
 
-    if not main_version_file.exists() and pyproject_toml.exists():
-        print("ERROR: Missing version files!")
-        sys.exit(1)
-
     if len(sys.argv) != 2:
         print("Usage: %s [-p|-m|-M|<version>]" % sys.argv[0])
         sys.exit(1)
@@ -55,8 +53,14 @@ def main():
             new_version = bump(old_version, 'minor')
         case '-M':
             new_version = bump(old_version, 'major')
+        case '--init':
+            new_version = bump("0.0.0", 'init')
         case _:
             new_version = arg
+
+    if not main_version_file.exists() and pyproject_toml.exists():
+        print("ERROR: Missing version files! pass --init to create a blank VERSION file.")
+        sys.exit(1)
 
     print(f"Old: {old_version}")
     print(f"New: {new_version}")
@@ -69,7 +73,6 @@ def main():
         print(f"Bumping version in {main_version_file}")
         bump_version(main_version_file, new_version)
         sys.exit(0)
-
 
 
 if __name__ == "__main__":
