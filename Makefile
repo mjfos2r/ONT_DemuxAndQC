@@ -10,3 +10,9 @@ check:
 tag:
 	git tag -s v$(VERSION) -m "Release version $(VERSION)"
 	git push origin tag v$(VERSION)
+
+lock:
+	uv lock
+	git add uv.lock
+	git commit -m "updated lockfile."
+	git push origin main
