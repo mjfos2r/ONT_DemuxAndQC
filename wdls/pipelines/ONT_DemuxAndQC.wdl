@@ -26,8 +26,8 @@ workflow ONT_DemuxAndQC {
         File RunChecksum
         Array[File] summary_files
         Array[File] summary_checksums
-        File? raw_hash
-        File? raw_digest
+        File? raw_hash_file
+        File? raw_hash_digest
     }
     ## All of the md5sum validation needs to be migrated over to terra's gcpmd5sum task.
     # not breaking everything right after it's functional. that's a downstream problem.
@@ -61,7 +61,7 @@ workflow ONT_DemuxAndQC {
     # input this to the decompression step so that we can stage this and prevent issues with cromwell trying to move the same file at the same time.
     # Since I think that may be an issue. (I have no proof just a hunch)
     Boolean run_is_valid = read_boolean(run_bams_validation.is_valid)
-    call GenUtils.DecompressRunTarball { input: tarball = RunTarball, is_valid = run_is_valid, raw_hash = raw_hash, raw_digest = raw_digest }
+    call GenUtils.DecompressRunTarball { input: tarball = RunTarball, is_valid = run_is_valid, raw_hash_file = raw_hash_file, raw_hash_digest = raw_hash_digest }
 
     # and now we parse our samplesheet using the paths from above!
     # this will either fail or work perfectly.

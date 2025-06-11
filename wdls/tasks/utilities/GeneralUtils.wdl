@@ -182,8 +182,8 @@ task DecompressRunTarball {
     input {
         File tarball
         Boolean is_valid
-        File? raw_hash
-        File? raw_digest
+        File? raw_hash_file
+        File? raw_hash_digest
 
         # Runtime parameters
         Int num_cpus = 16
@@ -220,14 +220,31 @@ task DecompressRunTarball {
         tar -xzf ~{tarball} -C extracted --strip-components=1
 
         # if we've provided the hash and digest, validate em.
-        if [[ -f "~{raw_digest}" && -f "~{raw_hash}" ]]; then
-            echo "Validating raw tarball contents via provided raw_hash and raw_digest files"
+        if [[ -f "~{raw_hash_digest}" && -f "~{raw_hash_file}" ]]; then
+            echo "Validating raw tarball contents via provided raw_hash and raw_hash_digest files"
             # if we have the raw_hash and raw_digest, check all the reads!
-            md5sum -c "~{raw_digest}" || { echo "ERROR: Raw tarball digest validation failed!"; exit 1; }
-            echo "SUCCESS: DIGEST CHECK"
+            # idk if this is properly named, what is a better way to name the hash of many hashes?
+            # file -> md5sum -> file.md5 (hash) -> md5sum -> file.md5.md5 (hash of hash)
+            #                                                (or alternatively, file.md5.digest)
+            #echo -e "\nCurrent location (PWD):               ${PWD}\n"
+            #echo -e "\nCurrent location of files.md5:        $(realpath ~{raw_hash_file})\n"
+            #echo -e "\nCurrent location of files.md5.digest: $(realpath ~{raw_hash_digest})\n"
+            # you know what, actually we need to just pull the digest from hashes.
+            echo "Pulling hash digest from each hashfile!"
+            RAW_MD5_DIGEST_EXPECTED=$(cat "~{raw_hash_digest}" | awk '{print $1}')
+            RAW_MD5_DIGEST_CALC=$(md5sum "~{raw_hash_file}" | awk '{print $1}')
+            if [ "$RAW_MD5_DIGEST_EXPECTED" == "$RAW_MD5_DIGEST_CALC"]; then
+                echo "SUCCESS: raw hash and digest are valid!"
+            else
+                echo "ERROR: Raw files hashfile is invalid!"
+                exit 1
+            fi
+
+            # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd extracted
-            md5sum -c ../"~{raw_hash}" || { echo "ERROR: Extracted reads validation failed!"; exit 1; }
+            md5sum -c "~{raw_hash_file}" || { echo "ERROR: Extracted reads validation failed!"; exit 1; }
             echo "SUCCESS: RAW FILES CHECK"
+            cd -
         else
             echo "no raw_hash/raw_digest provided, skipping individual file integrity checks!"
         fi

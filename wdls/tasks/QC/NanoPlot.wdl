@@ -23,7 +23,7 @@ task NanoPlotFromSummary {
     Int disk_size = 100 + 2*ceil(size(summary_files, "GB"))
 
     command <<<
-        set -euxo pipefail
+        set -euo pipefail
 
         echo "#######################################################"
         echo "# SEQUENCING SUMMARIES ARE VALID: ~{sep=',' is_valid} #"
