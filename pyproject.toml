@@ -1,0 +1,12 @@
+[project]
+name = "ont-demuxandqc"
+version = "2.3.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "miniwdl>=1.13.0",
+    "pre-commit>=4.2.0",
+    "tomli-w>=1.2.0",
+    "yamllint>=1.37.1",
+]

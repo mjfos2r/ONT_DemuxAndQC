@@ -1,11 +1,11 @@
 IMAGE_NAME = BbCallGenotypes
-VERSION := $(shell cat ._VERSION)
+VERSION := $(shell cat .VERSION)
 
-all: | tag 
+all: | tag
 
 check:
 	find . -name '.venv' -prune -o -name '.git' -prune -o -regex  '.*/*.wdl' -print0 | xargs -0 miniwdl check
-	find . -name '.venv' -prune -o -name '.git' -prune -o -regex  '.*\.\(ya?ml\)' -print0 | xargs -0 yamllint -d relaxed 
+	find . -name '.venv' -prune -o -name '.git' -prune -o -regex  '.*\.\(ya?ml\)' -print0 | xargs -0 yamllint -d relaxed
 
 tag:
 	git tag -s v$(VERSION) -m "Release version $(VERSION)"
