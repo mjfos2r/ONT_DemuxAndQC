@@ -36,6 +36,7 @@ task NanoPlotFromSummary {
         # generate barcode specific reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=' ' summary_files} \
+                --verbose \
                 -c royalblue \
                 --N50 \
                 --tsv_stats \
@@ -45,11 +46,11 @@ task NanoPlotFromSummary {
         # generate overall reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=" " summary_files} \
+                --verbose \
                  -c royalblue \
                  --N50 \
                  --tsv_stats \
                  --outdir nanoplots/overall
-
 
         # Pull the metrics from the overall stats, (both are identical but pick this one.)
         grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/overall/NanoStats.txt | \
