@@ -298,7 +298,7 @@ task DecompressRunTarball {
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${FQ_LIST}" | wc -l)" >> file_counts.txt
-                xargs zcat <"$FQ_LIST" | pigz -p "$NPROC" > "merged/${BARCODE}.merged.fastq.gz"
+                xargs zcat <"$FQ_LIST" | pigz -c -p "$NPROC" > "merged/${BARCODE}.merged.fastq.gz"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
             else
