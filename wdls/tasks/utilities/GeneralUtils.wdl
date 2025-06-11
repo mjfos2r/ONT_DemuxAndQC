@@ -199,6 +199,7 @@ task DecompressRunTarball {
         NPROC=$(awk '/^processor/{print}' /proc/cpuinfo | wc -l)
 
         #idk what was required but it's gone now.
+        echo "Validating tarball checksum"
         EXPECTED_MD5=$(cat "~{tarball_hash}" | awk '{print $1}')
         md5sum "~{tarball}" > actual_sum.txt
         ACTUAL_MD5=$(cat actual_sum.txt | awk '{print $1}')
