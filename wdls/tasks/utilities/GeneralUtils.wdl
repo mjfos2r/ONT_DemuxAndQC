@@ -280,7 +280,7 @@ task DecompressRunTarball {
         true > file_counts.txt
 
         # Lets hope this works and successfully merges either bams or fastqs.
-        index=0
+        index=1
         num_barcodes=$(cat directory_list.txt|wc -l)
         while read -r DIR_PATH; do
             BARCODE="$(basename "$DIR_PATH")"
