@@ -259,7 +259,7 @@ task DecompressRunTarball {
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${FQ_LIST}" | wc -l)" >> file_counts.txt
-                zcat "$(cat "$FQ_LIST")" | gzip > "merged/${BARCODE}.merged.fastq.gz"
+                xargs zcat <"$FQ_LIST" | gzip > "merged/${BARCODE}.merged.fastq.gz"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq" >> gcs_merged_reads_paths.txt
             else
                 echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
