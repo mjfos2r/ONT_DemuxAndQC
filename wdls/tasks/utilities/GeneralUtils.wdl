@@ -233,17 +233,17 @@ task DecompressRunTarball {
             echo "Pulling hash digest from each hashfile!"
             RAW_MD5_DIGEST_EXPECTED=$(cat "~{raw_hash_digest}" | awk '{print $1}')
             RAW_MD5_DIGEST_CALC=$(md5sum "~{raw_hash_file}" | awk '{print $1}')
-            if [ "$RAW_MD5_DIGEST_EXPECTED" == "$RAW_MD5_DIGEST_CALC"]; then
-                echo "SUCCESS: raw hash and digest are valid!"
+            if [ "$RAW_MD5_DIGEST_EXPECTED" == "$RAW_MD5_DIGEST_CALC" ]; then
+                echo "SUCCESS: Raw hash and its digest are valid! Using this to validate extracted reads."
             else
-                echo "ERROR: Raw files hashfile is invalid!"
+                echo "ERROR: Raw hash is invalid!"
                 exit 1
             fi
 
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd extracted
             md5sum -c "~{raw_hash_file}" || { echo "ERROR: Extracted reads validation failed!"; exit 1; }
-            echo "SUCCESS: RAW FILES CHECK"
+            echo "SUCCESS: RAW FILES CHECK, all reads are good!"
             cd -
         else
             echo "no raw_hash/raw_digest provided, skipping individual file integrity checks!"

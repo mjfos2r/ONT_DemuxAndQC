@@ -29,26 +29,27 @@ task NanoPlotFromSummary {
         echo "# SEQUENCING SUMMARIES ARE VALID: ~{sep=',' is_valid} #"
         echo "#######################################################"
 
-        NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}' )
+        NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
 
         mkdir -p nanoplots/barcoded nanoplots/overall
 
         # generate barcode specific reports and plots
         NanoPlot -t "${NPROCS}" \
-                --outdir nanoplots/barcoded \
+                --summary ~{sep=' ' summary_files} \
                 -c royalblue \
                 --N50 \
                 --tsv_stats \
                 --barcoded \
-                --summary ~{sep=' ' summary_files}
+                --outdir nanoplots/barcoded
 
         # generate overall reports and plots
         NanoPlot -t "${NPROCS}" \
-                --outdir nanoplots/overall \
+                --summary ~{sep=" " summary_files} \
                  -c royalblue \
                  --N50 \
                  --tsv_stats \
-                 --summary ~{sep=" " summary_files}
+                 --outdir nanoplots/overall
+
 
         # Pull the metrics from the overall stats, (both are identical but pick this one.)
         grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/overall/NanoStats.txt | \
@@ -105,7 +106,7 @@ task NanoPlotFromSummary {
         boot_disk_gb:       50,
         preemptible_tries:  0,
         max_retries:        1,
-        docker:             "quay.io/biocontainers/nanoplot:1.35.5--pyhdfd78af_0"
+        docker:             "mjfos2r/nanoplot:1.44.1"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
