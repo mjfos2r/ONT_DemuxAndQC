@@ -227,7 +227,7 @@ task DecompressRunTarball {
         echo "$gcs_task_call_basepath"
         true > gcs_merged_reads_paths.txt
 
-
+        mkdir -p extracted merged
         echo "Decompressing tarball."
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
         tar -xzf ~{tarball} -C extracted --strip-components=1
@@ -258,7 +258,7 @@ task DecompressRunTarball {
             cd extracted
             if md5sum -c "~{raw_hash_file}" 2>&1 | tee "$TMPFILE" | grep "FAILED"; then
                 echo "ERROR: Extracted reads validation failed!"
-                grep "FAILED" "$TMPFILE" > ../corrupted_files.txt
+                cat "$TMPFILE" | grep "FAILED" > ../corrupted_files.txt
             else
                 echo "SUCCESS: RAW FILES CHECK, all reads are good!"
                 echo "NONE" > ../corrupted_files.txt
