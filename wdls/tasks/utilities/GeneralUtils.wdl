@@ -199,44 +199,46 @@ task DecompressRunTarball {
         NPROC=$(awk '/^processor/{print}' /proc/cpuinfo | wc -l)
 
         #idk what was required but it's gone now.
-        echo "Validating tarball checksum"
+        echo "[ INFO ]::[ Validating tarball checksum... ]::[ $(date) ]"
+
         EXPECTED_MD5=$(cat "~{tarball_hash}" | awk '{print $1}')
         md5sum "~{tarball}" > actual_sum.txt
         ACTUAL_MD5=$(cat actual_sum.txt | awk '{print $1}')
         if [ "$EXPECTED_MD5" != "$ACTUAL_MD5" ]; then
-            echo "ERROR: CHECKSUM VALIDATION FAILED FOR ~{tarball}"
-            echo "ERROR: Expected: $EXPECTED_MD5"
-            echo "ERROR:   Actual: $ACTUAL_MD5"
+            echo "[ FAIL ]::[ CHECKSUM VALIDATION FAILED FOR ARCHIVE ]::[ $(date) ]"
+            echo "[ HASH ]::[ tarball: EXPECTED_MD5: $EXPECTED_MD5 ]::[ $(date) ]"
+            echo "[ HASH ]::[ tarball:   ACTUAL_MD5: $ACTUAL_MD5 ]::[ $(date) ]"
             VALID=false
             echo "false" > valid.txt
         else
-            echo "###################################################"
-            echo "SUCCESS: Checksum validation successful for ~{tarball}"
-            echo "###################################################"
+            echo "[ PASS ]::[ CHECKSUM VALIDATION SUCCESSFUL FOR ARCHIVE ]::[ $(date) ]"
+            echo "[ HASH ]::[ tarball: EXPECTED_MD5: $EXPECTED_MD5 ]::[ $(date) ]"
+            echo "[ HASH ]::[ tarball:   ACTUAL_MD5: $ACTUAL_MD5 ]::[ $(date) ]"
             VALID=true
             echo "true" > valid.txt
         fi
 
         if ! "$VALID"; then
-            echo "ERROR: NOT ATTEMPTING DECOMPRESSION SINCE TARBALL IS CORRUPTED!"
+            echo "[ FAIL ]::[ Extracted reads validation failed! ]::[ $(date) ]"
             exit 1
         fi
 
         # todo: figure out a faster way to validate tarball integrity..should probably just do the md5sum checking here?
         # handy snippet from community post: 360073540652-Cromwell-execution-directory
         gcs_task_call_basepath=$(cat gcs_delocalization.sh | grep -o '"gs:\/\/.*/glob-.*/' | sed 's#^"##' |sed 's#/$##' | head -n 1)
-        echo "$gcs_task_call_basepath"
+        echo "[ INFO ]::[ gcs_task_call_basepath = $gcs_task_call_basepath ]::[ $(date) ]"
         true > gcs_merged_reads_paths.txt
 
         mkdir -p extracted merged
-        echo "Decompressing tarball."
+        echo "[ INFO ]::[ Decompressing archive... ]::[ $(date) ]"
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
         tar -xzf ~{tarball} -C extracted --strip-components=1
-        echo "Decompression finished!"
+        echo "[ INFO ]::[ Decompression finished! ]::[ $(date) ]"
+
 
         # if we've provided the hash and digest, validate em.
         if [[ -f "~{raw_hash_digest}" && -f "~{raw_hash_file}" ]]; then
-            echo "Validating raw tarball contents via provided raw_hash and raw_hash_digest files"
+            echo "[ INFO ]::[ Validating raw tarball contents via provided raw_hash and raw_hash_digest files ]::[ $(date) ]"
             # if we have the raw_hash and raw_digest, check all the reads!
             # idk if this is properly named, what is a better way to name the hash of many hashes?
             # file -> md5sum -> file.md5 (hash) -> md5sum -> file.md5.md5 (hash of hash)
@@ -245,28 +247,30 @@ task DecompressRunTarball {
             #echo -e "\nCurrent location of files.md5:        $(realpath ~{raw_hash_file})\n"
             #echo -e "\nCurrent location of files.md5.digest: $(realpath ~{raw_hash_digest})\n"
             # you know what, actually we need to just pull the digest from hashes.
-            echo "Checking digests. Reading expected from file and calculating locally."
+            echo "[ INFO ]::[ Validating archive contents hashfile. ]::[ $(date) ]"
             RAW_MD5_DIGEST_EXPECTED=$(cat "~{raw_hash_digest}" | awk '{print $1}')
             RAW_MD5_DIGEST_CALC=$(md5sum "~{raw_hash_file}" | awk '{print $1}')
             if [ "$RAW_MD5_DIGEST_EXPECTED" == "$RAW_MD5_DIGEST_CALC" ]; then
-                echo "SUCCESS: Raw hash and its digest are valid! Using this to validate extracted reads."
+                echo "[ PASS ]::[ Archive contents hashfile is valid! ]::[ $(date) ]"
             else
-                echo "ERROR: Raw hash is invalid!"
+                echo "[ FAIL ]::[ Archive contents hashfile is invalid! ]::[ $(date) ]"
                 exit 1
             fi
             TMPFILE=$(mktemp)
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd extracted
+            echo "[ INFO ]::[ Validating extracted contents... ]::[ $(date) ]"
             if md5sum -c "~{raw_hash_file}" 2>&1 | tee "$TMPFILE" | grep "FAILED"; then
-                echo "ERROR: Extracted reads validation failed!"
+                echo "[ FAIL ]::[ Extracted reads validation failed! ]::[ $(date) ]"
                 cat "$TMPFILE" | grep "FAILED" > ../corrupted_files.txt
             else
-                echo "SUCCESS: RAW FILES CHECK, all reads are good!"
+                echo "[ PASS ]::[ Extracted content integrity: VALID! Continuing with processing! ]::[ $(date) ]"
                 echo "NONE" > ../corrupted_files.txt
             fi
             cd -
         else
-            echo "no raw_hash_file/raw_hash_digest provided, skipping individual file integrity checks!"
+            echo ""
+        echo "[ WARN ]::[ no raw_hash_file/raw_hash_digest provided, skipping checks on extracted contents ]::[ $(date) ]"
         fi
 
         # Get a list of our directories, pull the barcode ID, all so we can make a list of files for each
@@ -302,11 +306,11 @@ task DecompressRunTarball {
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
             else
-                echo "ERROR: NO BAM OR FASTQ FILES FOUND IN $DIR_PATH"
+                echo "[ ERROR ]::[ NO BAM OR FASTQ FILES FOUND IN $DIR_PATH ]::[ $(date) ]"
                 (( index+=1 ))
             fi
         done < directory_list.txt
-        echo "SUCCESS: Finished merging. Task complete!"
+        echo "[ INFO ]::[ Finished merging all reads. Task complete! ]::[ $(date) ]"
         >>>
 
     output {
