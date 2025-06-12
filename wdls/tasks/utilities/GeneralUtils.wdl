@@ -286,7 +286,7 @@ task DecompressRunTarball {
             BARCODE="$(basename "$DIR_PATH")"
             # if we have bams, merge the bams.
             if [[ -n $(find "$DIR_PATH" -name "*.bam" -print -quit) ]]; then
-                echo "[ ${BARCODE} ]::[BAM input detected. Merging reads]::[${index}/${num_barcodes}]"
+                echo "[ ${BARCODE} ]::[ BAM input detected. Merging reads ]::[ ${index}/${num_barcodes} ]"
                 BAM_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${BAM_LIST}" | wc -l)" >> file_counts.txt
@@ -294,7 +294,7 @@ task DecompressRunTarball {
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
             elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
-                echo "[ ${BARCODE} ]::[Fastq input detected. Merging reads]::[${index}/${num_barcodes}]"
+                echo "[ ${BARCODE} ]::[ Fastq input detected. Merging reads ]::[ ${index}/${num_barcodes} ]"
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 echo "${BARCODE}" "$(cat "${FQ_LIST}" | wc -l)" >> file_counts.txt
