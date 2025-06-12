@@ -317,7 +317,8 @@ task DecompressRunTarball {
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
         # output an array of our merged bam_files or fastqs
-        Array[File] merged_reads = select_first([glob("merged/*.bam"), glob("merged/*.fastq.gz")])
+        # this fails->select_first([glob("merged/*.bam"), glob("merged/*.fastq.gz")])
+        Array[File] merged_reads = glob("merged/*.merged.*") 
         File glob_paths = "gcs_merged_reads_paths.txt"
         File is_valid = "valid.txt"
         File corrupted_files = "corrupted_files.txt"

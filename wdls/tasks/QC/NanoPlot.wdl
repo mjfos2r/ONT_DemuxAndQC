@@ -30,19 +30,8 @@ task NanoPlotFromSummary {
         #NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
         NPROCS="$(( $(nproc) -1 ))"
 
-        mkdir -p nanoplots/barcoded nanoplots/overall
-        echo "Generating NanoPlot report for all barcodes"
-        # generate barcode specific reports and plots
-        NanoPlot -t "${NPROCS}" \
-                --summary ~{sep=' ' summary_files} \
-                --verbose \
-                -c royalblue \
-                --N50 \
-                --tsv_stats \
-                --barcoded \
-                --outdir nanoplots/barcoded
-
-        echo "Generating NanoPlot report for overall run."
+        mkdir -p nanoplots
+        echo "Generating summary NanoPlot report"
         # generate overall reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=" " summary_files} \
@@ -50,11 +39,11 @@ task NanoPlotFromSummary {
                  -c royalblue \
                  --N50 \
                  --tsv_stats \
-                 --outdir nanoplots/overall
+                 --outdir nanoplots
 
         echo "Done! Pulling metrics"
         # Pull the metrics from the overall stats, (both are identical but pick this one.)
-        grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/overall/NanoStats.txt | \
+        grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/NanoStats.txt | \
             sed 's/ >/_/' | \
             sed 's/://' | \
             awk '{ print $1 "\t" $2 }' | \
@@ -114,7 +103,7 @@ task NanoPlotFromSummary {
     runtime {
         cpu:                    select_first([runtime_attr.cpu_cores,         default_attr.cpu_cores])
         memory:                 select_first([runtime_attr.mem_gb,            default_attr.mem_gb]) + " GiB"
-        disks: "local-disk " +  select_first([runtime_attr.disk_gb,           default_attr.disk_gb]) + " HDD"
+        disks: "local-disk " +  select_first([runtime_attr.disk_gb,           default_attr.disk_gb]) + " SSD"
         bootDiskSizeGb:         select_first([runtime_attr.boot_disk_gb,      default_attr.boot_disk_gb])
         preemptible:            select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
         maxRetries:             select_first([runtime_attr.max_retries,       default_attr.max_retries])
