@@ -1,9 +1,7 @@
 version 1.0
 import "../../structs/Structs.wdl"
 # From github.com/broadinstitute/long-read-pipeline
-
 task NanoPlotFromSummary {
-
     meta {
         description: "Use NanoPlot to generate plots from ONT summary files"
     }
@@ -29,11 +27,11 @@ task NanoPlotFromSummary {
         echo "# SEQUENCING SUMMARIES ARE VALID: ~{sep=',' is_valid} #"
         echo "#######################################################"
 
-#        NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
-	NPROCS="$(( $(nproc) -1 ))
+        #NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
+        NPROCS="$(( $(nproc) -1 ))"
 
         mkdir -p nanoplots/barcoded nanoplots/overall
-	echo "Generating NanoPlot report for all barcodes"
+        echo "Generating NanoPlot report for all barcodes"
         # generate barcode specific reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=' ' summary_files} \
@@ -44,7 +42,7 @@ task NanoPlotFromSummary {
                 --barcoded \
                 --outdir nanoplots/barcoded
 
-	echo "Generating NanoPlot report for overall run."
+        echo "Generating NanoPlot report for overall run."
         # generate overall reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=" " summary_files} \
@@ -54,7 +52,7 @@ task NanoPlotFromSummary {
                  --tsv_stats \
                  --outdir nanoplots/overall
 
-	echo "Done! Pulling metrics"
+        echo "Done! Pulling metrics"
         # Pull the metrics from the overall stats, (both are identical but pick this one.)
         grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/overall/NanoStats.txt | \
             sed 's/ >/_/' | \
