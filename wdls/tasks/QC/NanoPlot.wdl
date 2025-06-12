@@ -20,7 +20,7 @@ task NanoPlotFromSummary {
         RuntimeAttr? runtime_attr_override
     }
 
-    Int disk_size = 100 + 2*ceil(size(summary_files, "GB"))
+    Int disk_size = 365 + 2*ceil(size(summary_files, "GB"))
 
     command <<<
         set -euo pipefail
@@ -29,10 +29,11 @@ task NanoPlotFromSummary {
         echo "# SEQUENCING SUMMARIES ARE VALID: ~{sep=',' is_valid} #"
         echo "#######################################################"
 
-        NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
+#        NPROCS=$(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $NF+1}')
+	NPROCS="$(( $(nproc) -1 ))
 
         mkdir -p nanoplots/barcoded nanoplots/overall
-
+	echo "Generating NanoPlot report for all barcodes"
         # generate barcode specific reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=' ' summary_files} \
@@ -43,6 +44,7 @@ task NanoPlotFromSummary {
                 --barcoded \
                 --outdir nanoplots/barcoded
 
+	echo "Generating NanoPlot report for overall run."
         # generate overall reports and plots
         NanoPlot -t "${NPROCS}" \
                 --summary ~{sep=" " summary_files} \
@@ -52,6 +54,7 @@ task NanoPlotFromSummary {
                  --tsv_stats \
                  --outdir nanoplots/overall
 
+	echo "Done! Pulling metrics"
         # Pull the metrics from the overall stats, (both are identical but pick this one.)
         grep -v -e '^Metrics' -e '^highest' -e '^longest' nanoplots/overall/NanoStats.txt | \
             sed 's/ >/_/' | \
@@ -101,7 +104,7 @@ task NanoPlotFromSummary {
     #########################
     # BEGONE PREEMPTION
     RuntimeAttr default_attr = object {
-        cpu_cores:          8,
+        cpu_cores:          16,
         mem_gb:             32,
         disk_gb:            disk_size,
         boot_disk_gb:       50,
