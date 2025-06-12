@@ -8,7 +8,7 @@ workflow ONT_DemuxAndQC {
     meta {
         description: "Take in the tarball of the bam_pass file for our run, decompress it, merge all of the bams for each barcode, rename the barcode, then trim, filter, and generate QC report for all of our samples. Also generate a NanoPlot from the ONT summary.txt file"
         author: "Michael J. Foster"
-        version: "v1.3.2"
+        version: "v2.6.0"
     }
 
     parameter_meta {
@@ -81,7 +81,7 @@ workflow ONT_DemuxAndQC {
 
         # Validation output
         Array[Pair[String, Boolean]] summary_file_integrity = summary_integrity
-        File run_validation_status = DecompressRunTarball.is_valid
+        Boolean run_validation_status = DecompressRunTarball.is_valid
         File corrupted_files = DecompressRunTarball.corrupted_files
 
         # decompressed outputs from DecompressRunTarball if md5 is valid.
