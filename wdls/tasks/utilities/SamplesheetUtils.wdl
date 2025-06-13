@@ -35,7 +35,7 @@ barcode_to_reads = {}
 
 with open("target_datatable_id.txt", 'r') as f:
     target_datatable_id = f.readlines()[0].strip()
-
+    print(f"Target datatable ID: {target_datatable_id}")
 with open("gcs_paths.txt", 'r') as f:
     for line in f:
         path = line.strip()#.replace('"', '') # sanitize any potential quote issues.
