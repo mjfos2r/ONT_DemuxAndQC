@@ -50,7 +50,7 @@ with open("~{samplesheet}", 'r', newline='', encoding='utf-8-sig') as infile:
     reader = csv.DictReader(infile, delimiter=',')
     for row in reader:
         # do this to check for bad samplesheet column naming.
-        if target_datable_id not in row.keys():
+        if target_datatable_id not in row.keys():
             row[target_datatable_id] = row.pop('sample_id')
         experiment_id = row.get("experiment_id", "")
         barcode = row["barcode"]
