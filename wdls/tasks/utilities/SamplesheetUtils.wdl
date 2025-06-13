@@ -34,7 +34,7 @@ import json
 barcode_to_reads = {}
 
 with open("target_datatable_id.txt", 'r') as f:
-    target_datatable_id = f.readlines().strip()
+    target_datatable_id = f.readlines()[0].strip()
 
 with open("gcs_paths.txt", 'r') as f:
     for line in f:
