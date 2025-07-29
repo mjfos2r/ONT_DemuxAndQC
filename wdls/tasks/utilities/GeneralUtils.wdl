@@ -278,7 +278,7 @@ task DecompressRunTarball {
                 cat "$TMPFILE" | grep "FAILED" > ../corrupted_files.txt
             else
                 echo "[ PASS ]::[ Extracted content integrity: VALID! Continuing with processing! ]::[ $(date) ]"
-                echo "NONE" > "${WD}/corrupted_files.txt
+                echo "NONE" > "${WD}/corrupted_files.txt"
             fi
             cd -
         else
