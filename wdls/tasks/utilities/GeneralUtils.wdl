@@ -333,7 +333,7 @@ task DecompressRunTarball {
     output {
         # how many barcodes we working with?
         Int directory_count = read_int("directory_count.txt")
-        Int directory_list = read_int("directory_list.txt")
+        Array[String] directory_list = read_lines("directory_list.txt")
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
         # and what files did we merge?
