@@ -337,7 +337,7 @@ task DecompressRunTarball {
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
         # and what files did we merge?
-        Array[File] file_list = glob("file_lists/*_bams.txt")
+        Array[File] file_list = glob("file_lists/*_files.txt")
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
         # output an array of our merged bam_files or fastqs
