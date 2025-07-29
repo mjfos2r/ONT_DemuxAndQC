@@ -311,7 +311,7 @@ task DecompressRunTarball {
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 cat "${BAM_LIST}" | wc -l >> file_counts.txt
                 #samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
-                samtools cat -o merged/"${BARCODE}.merged.bam" "$(cat $BAM_LIST)"
+                samtools cat -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
             elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
