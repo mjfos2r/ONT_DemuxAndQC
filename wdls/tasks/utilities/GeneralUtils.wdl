@@ -184,7 +184,6 @@ task DecompressRunTarball {
         File tarball_hash
         File? raw_hash_file
         File? raw_hash_digest
-        File? samplesheet
         Boolean singleplex = false
         String? sample_id
 
