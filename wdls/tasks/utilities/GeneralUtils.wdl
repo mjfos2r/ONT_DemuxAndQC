@@ -202,11 +202,13 @@ task DecompressRunTarball {
 
         # check for the required args early before decomp.
         if [ -n "~{sample_id}" ] && [ "~{singleplex}" == "true" ]; then
+            echo "[ INFO ]::[ Processing run as singleplex... ]::[ $(date) ]"
             EXTRACTED="extracted/~{sample_id}"
         elif [ "~{singleplex}" == "true" ] || [ -n "~{sample_id}" ]; then
             echo "[ FAIL ]::[ ERROR: Singleplex run or sample_id provided but not both!Check your args and try again! ]::[ $(date) ]"
             exit 1
         else
+            echo "[ INFO ]::[ Processing run as multiplex... ]::[ $(date) ]"
             EXTRACTED="extracted"
         fi
 
@@ -240,12 +242,12 @@ task DecompressRunTarball {
         echo "[ INFO ]::[ gcs_task_call_basepath = $gcs_task_call_basepath ]::[ $(date) ]"
         true > gcs_merged_reads_paths.txt
 
-        mkdir -p "$EXTRACTED" merged
+        mkdir -p "$EXTRACTED"
+        mkdir -p merged
         echo "[ INFO ]::[ Decompressing archive... ]::[ $(date) ]"
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs OR just bams in the sample_id dir.
         tar -xzf ~{tarball} -C "$EXTRACTED" --strip-components=1
         echo "[ INFO ]::[ Decompression finished! ]::[ $(date) ]"
-
 
         # if we've provided the hash and digest, validate em.
         if [[ -f "~{raw_hash_digest}" && -f "~{raw_hash_file}" ]]; then
@@ -281,11 +283,14 @@ task DecompressRunTarball {
             cd -
         else
             echo ""
-        echo "[ WARN ]::[ no raw_hash_file/raw_hash_digest provided, skipping checks on extracted contents ]::[ $(date) ]"
+            echo "[ WARN ]::[ no raw_hash_file/raw_hash_digest provided, skipping checks on extracted contents ]::[ $(date) ]"
         fi
 
         # Get a list of our directories, pull the barcode ID, all so we can make a list of files for each
-        find "$EXTRACTED" -mindepth 1 -maxdepth 1 -type d | sort > directory_list.txt
+        find extracted -mindepth 1 -maxdepth 1 -type d | sort > directory_list.txt
+        echo "List of directories within $EXTRACTED"
+        cat directory_list.txt
+        echo ""
         cut -d'/' -f2 directory_list.txt > barcodes.txt
         mkdir -p file_lists
 
@@ -327,6 +332,7 @@ task DecompressRunTarball {
     output {
         # how many barcodes we working with?
         Int directory_count = read_int("directory_count.txt")
+        Int directory_list = read_int("directory_list.txt")
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
         # and what files did we merge?
