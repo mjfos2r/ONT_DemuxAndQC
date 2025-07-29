@@ -184,6 +184,9 @@ task DecompressRunTarball {
         File tarball_hash
         File? raw_hash_file
         File? raw_hash_digest
+        File? samplesheet
+        Boolean singleplex = false
+        String? sample_id
 
         # Runtime parameters
         Int num_cpus = 16
@@ -198,9 +201,18 @@ task DecompressRunTarball {
 
         NPROC=$(awk '/^processor/{print}' /proc/cpuinfo | wc -l)
 
-        #idk what was required but it's gone now.
-        echo "[ INFO ]::[ Validating tarball checksum... ]::[ $(date) ]"
+        # check for the required args early before decomp.
+        if [ -n "~{sample_id}" ] && [ "~{singleplex}" == "true" ]; then
+            EXTRACTED="extracted/~{sample_id}"
+        elif [ "~{singleplex}" == "true" ] || [ -n "~{sample_id}" ]; then
+            echo "[ FAIL ]::[ ERROR: Singleplex run or sample_id provided but not both!Check your args and try again! ]::[ $(date) ]"
+            exit 1
+        else
+            EXTRACTED="extracted"
+        fi
 
+        # now validate the big ole tarball.
+        echo "[ INFO ]::[ Validating tarball checksum... ]::[ $(date) ]"
         EXPECTED_MD5=$(cat "~{tarball_hash}" | awk '{print $1}')
         md5sum "~{tarball}" > actual_sum.txt
         ACTUAL_MD5=$(cat actual_sum.txt | awk '{print $1}')
@@ -229,10 +241,10 @@ task DecompressRunTarball {
         echo "[ INFO ]::[ gcs_task_call_basepath = $gcs_task_call_basepath ]::[ $(date) ]"
         true > gcs_merged_reads_paths.txt
 
-        mkdir -p extracted merged
+        mkdir -p "$EXTRACTED" merged
         echo "[ INFO ]::[ Decompressing archive... ]::[ $(date) ]"
-        # crack the tarball, strip the top bam_pass component so we're left with barcode dirs.
-        tar -xzf ~{tarball} -C extracted --strip-components=1
+        # crack the tarball, strip the top bam_pass component so we're left with barcode dirs OR just bams in the sample_id dir.
+        tar -xzf ~{tarball} -C "$EXTRACTED" --strip-components=1
         echo "[ INFO ]::[ Decompression finished! ]::[ $(date) ]"
 
 
@@ -258,7 +270,7 @@ task DecompressRunTarball {
             fi
             TMPFILE=$(mktemp)
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
-            cd extracted
+            cd "$EXTRACTED"
             echo "[ INFO ]::[ Validating extracted contents... ]::[ $(date) ]"
             if md5sum -c "~{raw_hash_file}" 2>&1 | tee "$TMPFILE" | grep "FAILED"; then
                 echo "[ FAIL ]::[ Extracted reads validation failed! ]::[ $(date) ]"
@@ -274,7 +286,7 @@ task DecompressRunTarball {
         fi
 
         # Get a list of our directories, pull the barcode ID, all so we can make a list of files for each
-        find extracted -mindepth 1 -maxdepth 1 -type d | sort > directory_list.txt
+        find "$EXTRACTED" -mindepth 1 -maxdepth 1 -type d | sort > directory_list.txt
         cut -d'/' -f2 directory_list.txt > barcodes.txt
         mkdir -p file_lists
 
@@ -318,6 +330,8 @@ task DecompressRunTarball {
         Int directory_count = read_int("directory_count.txt")
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
+        # and what files did we merge?
+        Array[File] file_list = glob("file_lists/*_bams.txt")
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
         # output an array of our merged bam_files or fastqs
