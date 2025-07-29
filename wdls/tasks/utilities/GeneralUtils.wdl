@@ -248,7 +248,7 @@ task DecompressRunTarball {
         # crack the tarball, strip the top bam_pass component so we're left with barcode dirs OR just bams in the sample_id dir.
         tar -xzf ~{tarball} -C "$EXTRACTED" --strip-components=1
         echo "[ INFO ]::[ Decompression finished! ]::[ $(date) ]"
-
+        WD="$(pwd)"
         # if we've provided the hash and digest, validate em.
         if [[ -f "~{raw_hash_digest}" && -f "~{raw_hash_file}" ]]; then
             echo "[ INFO ]::[ Validating raw tarball contents via provided raw_hash and raw_hash_digest files ]::[ $(date) ]"
@@ -278,7 +278,7 @@ task DecompressRunTarball {
                 cat "$TMPFILE" | grep "FAILED" > ../corrupted_files.txt
             else
                 echo "[ PASS ]::[ Extracted content integrity: VALID! Continuing with processing! ]::[ $(date) ]"
-                echo "NONE" > ../corrupted_files.txt
+                echo "NONE" > "${WD}/corrupted_files.txt
             fi
             cd -
         else
@@ -333,7 +333,7 @@ task DecompressRunTarball {
     output {
         # how many barcodes we working with?
         Int directory_count = read_int("directory_count.txt")
-        Array[String] directory_list = read_lines("directory_list.txt")
+        Int directory_list = read_int("directory_list.txt")
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
         # and what files did we merge?
