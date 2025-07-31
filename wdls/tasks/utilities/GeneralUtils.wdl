@@ -299,7 +299,8 @@ task DecompressRunTarball {
         # Create/clear the counts file before the loop
         true > file_counts.txt
 
-        # Lets hope this works and successfully merges either bams or fastqs.
+        # do NOT use samtools merge as it will mangle the read groups and cause significant grief when
+        # trying to use this file downstream.
         index=1
         num_barcodes=$(cat directory_list.txt|wc -l)
         while read -r DIR_PATH; do
@@ -310,7 +311,6 @@ task DecompressRunTarball {
                 BAM_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 cat "${BAM_LIST}" | wc -l >> file_counts.txt
-                #samtools merge -f -@ "$NPROC" -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
                 samtools cat -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
                 echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
