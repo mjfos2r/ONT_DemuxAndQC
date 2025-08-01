@@ -1,6 +1,7 @@
 version: 1.2
 workflows:
-- name: ONT_DemuxAndQC
-  subclass: wdl
-  primaryDescriptorPath: /wdls/pipelines/ONT_DemuxAndQC.wdl
+  - name: ONT_DemuxAndQC
+    subclass: wdl
+    primaryDescriptorPath: /wdls/pipelines/ONT_DemuxAndQC.wdl
 
+    latestTagAsDefault: 'true'
