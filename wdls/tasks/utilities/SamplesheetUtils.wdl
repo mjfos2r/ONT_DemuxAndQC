@@ -31,6 +31,7 @@ task ParseSamplesheetToDataTable {
 import os
 import csv
 import json
+import re
 barcode_to_reads = {}
 
 with open("target_datatable_id.txt", 'r') as f:
@@ -55,16 +56,23 @@ with open("~{samplesheet}", 'r', newline='', encoding='utf-8-sig') as infile:
         experiment_id = row.get("experiment_id", "")
         barcode = row["barcode"]
         merged_reads = barcode_to_reads.get(barcode, "")
-        row["merged_reads"] = merged_reads
+        m = re.search(r"\.f.*q\.gz$|\.bam$", merged_reads)
+        if m:
+            if m.group().endswith(".bam"):
+                target_reads_col = "merged_bam"
+            else:
+                target_reads_col = "merged_fastq"
+        print(f"target_reads_col: {target_reads_col}")
+        row[target_reads_col] = merged_reads
         rows.append(row)
         print(f"experiment_id: {experiment_id}")
         print(f"barcode: {barcode}")
-        print(f"merged_reads: {merged_reads}\n")
+        print(f"{target_reads_col}: {merged_reads}\n")
         print(f"SampleSheet Columns: {row.keys()}")
 DataTable_out_tsv = "DataTable.tsv"
 print(DataTable_out_tsv)
 with open(DataTable_out_tsv, 'w') as outf:
-    fieldnames = [ target_datatable_id, 'barcode', 'experiment_id', 'flow_cell_id', 'position_id', 'flow_cell_product_code', 'kit', 'merged_reads']
+    fieldnames = [ target_datatable_id, 'barcode', 'experiment_id', 'flow_cell_id', 'position_id', 'flow_cell_product_code', 'kit', target_reads_col ]
     #fieldnames = rows[0].keys()
     print(f"Fieldnames: {fieldnames}")
     writer = csv.DictWriter(outf, delimiter='\t', fieldnames=fieldnames)

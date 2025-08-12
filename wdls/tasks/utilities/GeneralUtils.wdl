@@ -311,16 +311,16 @@ task DecompressRunTarball {
                 BAM_LIST="file_lists/${BARCODE}_files.txt"
                 find "$DIR_PATH" -name "*.bam" | sort > "file_lists/${BARCODE}_files.txt"
                 cat "${BAM_LIST}" | wc -l >> file_counts.txt
-                samtools cat -o merged/"${BARCODE}.merged.bam" -b "$BAM_LIST"
-                echo "${gcs_task_call_basepath}/${BARCODE}.merged.bam" >> gcs_merged_reads_paths.txt
+                samtools cat -o merged/"${BARCODE}_raw.merged.bam" -b "$BAM_LIST"
+                echo "${gcs_task_call_basepath}/${BARCODE}_raw.merged.bam" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
-            elif [[ -n $(find "$DIR_PATH" -name "*.fastq.gz" -print -quit) ]]; then
+            elif [[ -n $(find "$DIR_PATH" -name "*.f*q.gz" -print -quit) ]]; then
                 echo "[ ${BARCODE} ]::[ Fastq input detected. Merging reads ]::[ ${index}/${num_barcodes} ]"
                 FQ_LIST="file_lists/${BARCODE}_files.txt"
-                find "$DIR_PATH" -name "*.fastq.gz" | sort > "file_lists/${BARCODE}_files.txt"
+                find "$DIR_PATH" -name "*.f*q.gz" | sort > "file_lists/${BARCODE}_files.txt"
                 cat "${FQ_LIST}" | wc -l >> file_counts.txt
-                xargs zcat <"$FQ_LIST" | pigz -c -p "$NPROC" > "merged/${BARCODE}.merged.fastq.gz"
-                echo "${gcs_task_call_basepath}/${BARCODE}.merged.fastq.gz" >> gcs_merged_reads_paths.txt
+                xargs zcat <"$FQ_LIST" | pigz -c -p "$NPROC" > "merged/${BARCODE}_raw.merged.fastq.gz"
+                echo "${gcs_task_call_basepath}/${BARCODE}_raw.merged.fastq.gz" >> gcs_merged_reads_paths.txt
                 (( index+=1 ))
             else
                 echo "[ ERROR ]::[ NO BAM OR FASTQ FILES FOUND IN $DIR_PATH ]::[ $(date) ]"
@@ -340,8 +340,11 @@ task DecompressRunTarball {
         Array[File] file_list = glob("file_lists/*_files.txt")
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
-        # output an array of our merged bam_files or fastqs
-        # this fails->select_first([glob("merged/*.bam"), glob("merged/*.fastq.gz")])
+        ### Actually, we don't need to mess with this, we need this output to merged_reads in the seqrun table and only changed in the samplesheet. easy enough!
+        # depending on what input was fed into this, output either to:
+        # merged_fastq or merged_bam column
+        #Array[File]? merged_fastq = glob("merged/*.merged.fastq.gz")
+        #Array[File]? merged_bam = glob("merged/*.merged.bam")
         Array[File] merged_reads = glob("merged/*.merged.*")
         File glob_paths = "gcs_merged_reads_paths.txt"
         Boolean is_valid = read_boolean("valid.txt")
