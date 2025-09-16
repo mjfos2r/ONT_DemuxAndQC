@@ -8,7 +8,7 @@ workflow ONT_DemuxAndQC {
     meta {
         description: "Take in the tarball of the bam_pass file for our run, decompress it, merge all of the bams for each barcode, rename the barcode, then trim, filter, and generate QC report for all of our samples. Also generate a NanoPlot from the ONT summary.txt file"
         author: "Michael J. Foster"
-        version: "v2.6.0"
+        version: "v2.10.0"
     }
 
     parameter_meta {
