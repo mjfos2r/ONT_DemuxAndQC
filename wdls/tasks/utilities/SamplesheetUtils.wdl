@@ -42,7 +42,7 @@ with open("gcs_paths.txt", 'r') as f:
         path = line.strip()#.replace('"', '') # sanitize any potential quote issues.
         print(f"Input Path From Cromwell: {path}")
         filename = os.path.basename(path)
-        barcode = filename.split(".")[0] # barcode01.merged.bam or barcode01.merged.fastq
+        barcode = filename.split(".")[0].split("_")[0] # barcode01_raw.merged.bam or barcode01_raw.merged.fastq => barcode01_raw . merged . ext => barcode01 _ raw => barcode01
         barcode_to_reads[barcode] = path
 experiment_id = ""
 rows = []
@@ -59,10 +59,14 @@ with open("~{samplesheet}", 'r', newline='', encoding='utf-8-sig') as infile:
         m = re.search(r"\.f.*q\.gz$|\.bam$", merged_reads)
         if m:
             if m.group().endswith(".bam"):
+                print("input bams detected.")
                 target_reads_col = "merged_bam"
             else:
+                print("input fastqs detected.")
                 target_reads_col = "merged_fastq"
-        print(f"target_reads_col: {target_reads_col}")
+        else:
+            print("Error in determining input read format, leaving target column name as merged_reads.")
+            target_reads_col = "merged_reads"
         row[target_reads_col] = merged_reads
         rows.append(row)
         print(f"experiment_id: {experiment_id}")
