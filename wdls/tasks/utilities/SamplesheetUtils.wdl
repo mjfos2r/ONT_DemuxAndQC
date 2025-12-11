@@ -16,8 +16,8 @@ task ParseSamplesheetToDataTable {
         File file_paths
         String TargetDataTableID = "Bb_sample_id"
 
-        Int num_cpu = 4
-        Int mem_gb = 8
+        Int num_cpu = 2
+        Int mem_gb = 4
         RuntimeAttr? runtime_attr_override
     }
     Int disk_size = 100 + ceil(size(samplesheet, "GB"))
@@ -98,7 +98,7 @@ EOF
         mem_gb:             mem_gb,
         disk_gb:            disk_size,
         boot_disk_gb:       50,
-        preemptible_tries:  0,
+        preemptible_tries:  3,
         max_retries:        1,
         docker:             "python:3.9-slim"
     }
