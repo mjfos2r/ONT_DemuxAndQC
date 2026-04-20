@@ -270,7 +270,7 @@ task DecompressRunTarball {
                 exit 1
             fi
             TMPFILE=$(mktemp)
-            touch corrupted_files.txt # touch this so it doesn't complain when nothing's corrupted.
+
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd "$EXTRACTED"
             echo "[ INFO ]::[ Validating extracted contents... ]::[ $(date) ]"
@@ -279,7 +279,7 @@ task DecompressRunTarball {
                 cat "$TMPFILE" | grep "FAILED" > ../corrupted_files.txt
             else
                 echo "[ PASS ]::[ Extracted content integrity: VALID! Continuing with processing! ]::[ $(date) ]"
-                echo "NONE" > "${WD}/corrupted_files.txt"
+                echo "NONE" > ${WD}/corrupted_files.txt
             fi
             cd -
         else
