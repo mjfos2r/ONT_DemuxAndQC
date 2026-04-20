@@ -270,6 +270,7 @@ task DecompressRunTarball {
                 exit 1
             fi
             TMPFILE=$(mktemp)
+            touch corrupted_files.txt # touch this so it doesn't complain when nothing's corrupted.
             # if our hash file is valid, hop into the extracted dir, check everything, then hop back
             cd "$EXTRACTED"
             echo "[ INFO ]::[ Validating extracted contents... ]::[ $(date) ]"
