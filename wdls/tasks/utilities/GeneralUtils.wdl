@@ -328,7 +328,14 @@ task DecompressRunTarball {
                 (( index+=1 ))
             fi
         done < directory_list.txt
-        echo "[ INFO ]::[ Finished merging all reads. Task complete! ]::[ $(date) ]"
+        echo "[ INFO ]::[ Finished merging all reads. Now merging file lists.]::[ $(date) ]"
+        # This is because two globs messes up the hacky bucket path parsing from the delocalization script.
+        # It needs to pull only one glob hash to construct the reads paths for the data table.
+        cat file_lists/*_files.txt > all_reads_files.txt
+
+        echo "[ INFO ]::[ Finished merging file lists. Task complete! ]::[ $(date) ]"
+
+
         >>>
 
     output {
@@ -338,7 +345,7 @@ task DecompressRunTarball {
         # how many read files we got?
         Array[Int] file_counts = read_lines("file_counts.txt")
         # and what files did we merge?
-        Array[File] file_list = glob("file_lists/*_files.txt")
+        File file_list = "all_reads_files.txt"
         # output an array of our barcode_ids
         Array[String] barcode = read_lines("barcodes.txt")
         ### Actually, we don't need to mess with this, we need this output to merged_reads in the seqrun table and only changed in the samplesheet. easy enough!

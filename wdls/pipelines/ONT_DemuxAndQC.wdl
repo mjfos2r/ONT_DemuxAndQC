@@ -96,7 +96,7 @@ workflow ONT_DemuxAndQC {
         Array[String] barcode = DecompressRunTarball.barcode
         Array[File] merged_reads = DecompressRunTarball.merged_reads
         File merged_reads_gcp_paths = DecompressRunTarball.glob_paths
-        Array[File] file_list = DecompressRunTarball.file_list
+        File file_list = DecompressRunTarball.file_list
 
         # NanoPlot outputs
         File nanoplot_map = NanoPlotFromSummary.map
